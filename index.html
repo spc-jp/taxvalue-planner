@@ -1,532 +1,716 @@
-import React, { useState } from 'react';
-import { 
-  Briefcase, 
-  TrendingUp, 
-  Users, 
-  Calculator, 
-  FileText, 
-  ChevronRight, 
-  CheckCircle, 
-  Lightbulb, 
-  Settings,
-  BrainCircuit,
-  PiggyBank,
-  Building,
-  X,
-  Plus,
-  Copy,
-  LineChart,
-  Target,
-  Laptop
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaxValue Planner｜付加価値プラン構築シミュレーター</title>
+  <meta name="description" content="税理士・経営コンサルタント向け 付加価値サービス構築シミュレーター" />
 
-// === 税理士・会計事務所向け データ ===
-const taxValueAddIdeas = [
-  {
-    id: 't1',
-    title: "AI活用 経営分析レポート",
-    category: "経営支援",
-    icon: <BrainCircuit className="w-8 h-8 text-blue-500" />,
-    description: "試算表データをAIで分析し、業界平均との比較や将来予測、改善提案を含むレポートを自動生成・提供するサービス。",
-    target: "全顧問先（特に成長意欲のある企業）",
-    price: "月額 +5,000円〜10,000円",
-    effort: "低（AI活用による自動化）",
-    steps: [
-      "既存の試算表フォーマットからデータ抽出",
-      "生成AI（ChatGPT等）へプロンプト入力（収益性、安全性等の分析指示）",
-      "出力結果を専門家がレビュー・加筆修正",
-      "月次訪問・面談時にレポートとして提出"
-    ]
-  },
-  {
-    id: 't2',
-    title: "AI 補助金・助成金 自動診断",
-    category: "資金繰り支援",
-    icon: <PiggyBank className="w-8 h-8 text-green-500" />,
-    description: "顧問先の事業内容や財務状況から、申請可能性の高い補助金を定期的にAI診断して提案するサービス。",
-    target: "設備投資を控えている企業、採用注力企業",
-    price: "月額 +3,000円〜（＋申請成功報酬）",
-    effort: "中（最新情報のキャッチアップが必要）",
-    steps: [
-      "顧問先の基本情報・投資予定をヒアリングシートにまとめる",
-      "AIを用いて最新の補助金情報とマッチング",
-      "申請可能性の高いものをリスト化して提案",
-      "（オプション）申請書ドラフトのAI作成支援"
-    ]
-  },
-  {
-    id: 't3',
-    title: "クラウド・経理BPOパッケージ",
-    category: "業務改善",
-    icon: <Calculator className="w-8 h-8 text-purple-500" />,
-    description: "記帳代行だけでなく、クラウドツール（請求、勤怠、経費精算）の導入から運用までを丸ごと請け負うサービス。",
-    target: "人手不足に悩む中小企業、経理担当者の退職予定企業",
-    price: "月額 +50,000円〜150,000円",
-    effort: "高（初期設定と標準化が必要）",
-    steps: [
-      "現在の経理フローのヒアリングと課題抽出",
-      "クラウド会計・各種SaaSの選定と初期セットアップ",
-      "業務フローの再構築・マニュアル化",
-      "記帳業務のAI-OCR化による内製効率化と運用開始"
-    ]
-  },
-  {
-    id: 't4',
-    title: "スモールM&A / 事業承継アドバイザリー",
-    category: "高度専門支援",
-    icon: <Building className="w-8 h-8 text-orange-500" />,
-    description: "後継者不在の企業に対する事業承継計画の策定や、小規模M&Aのバリュエーション、買い手探し支援。",
-    target: "社長が高齢化している黒字企業",
-    price: "着手金＋成功報酬（取引額の数%）",
-    effort: "高（専門知識とネットワークが必要）",
-    steps: [
-      "決算事前対策でのヒアリング時に承継ニーズを確認",
-      "自社株評価・簡易企業価値評価の実施",
-      "M&Aプラットフォームの活用・買い手候補の選定",
-      "デューデリジェンスサポート・最終契約支援"
-    ]
-  }
-];
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-const taxPresets = [
-  "法人メイン（売上1億〜5億）",
-  "創業期・スタートアップ中心",
-  "個人事業主・フリーランス中心",
-  "資産家・地主（相続メイン）",
-  "医療法人・クリニック",
-  "飲食・小売・サービス業"
-];
+  <!-- React 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-const taxPainPoints = [
-  "単価が上がらない・記帳業務に追われている",
-  "スタッフの採用・定着が難しい（属人化）",
-  "他事務所との差別化ができていない",
-  "顧問先の業績悪化・資金繰り不安"
-];
+  <!-- Babel Standalone（JSXをブラウザで変換） -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// === 経営コンサルタント向け データ ===
-const consultingValueAddIdeas = [
-  {
-    id: 'c1',
-    title: "社外CFO（伴走型 経営会議支援）",
-    category: "継続支援（ストック化）",
-    icon: <LineChart className="w-8 h-8 text-blue-500" />,
-    description: "スポットでの計画策定で終わらせず、月次経営会議にファシリテーターとして入り、予実管理とアクションの実行を担保する。",
-    target: "売上3億〜10億で右腕人材（CFO）が不在の企業",
-    price: "月額 100,000円〜300,000円",
-    effort: "中（フォーマット化で属人化を排除可能）",
-    steps: [
-      "キックオフにて年間目標とKPIの設定",
-      "月次経営会議のフォーマット（アジェンダ）の固定化",
-      "AIを活用した会議議事録・決定事項の即時要約・共有",
-      "次月までのアクションアイテム（宿題）の進捗トラッキング"
-    ]
-  },
-  {
-    id: 'c2',
-    title: "AI活用 高速・事業計画策定支援",
-    category: "資金調達・補助金",
-    icon: <Target className="w-8 h-8 text-red-500" />,
-    description: "経営者の頭の中にある構想をヒアリングし、生成AIを用いて銀行や補助金審査員に刺さる事業計画書を高速でドラフトする。",
-    target: "新規事業立ち上げ、大型設備投資を控える企業",
-    price: "着手金10万円 ＋ 成功報酬10%",
-    effort: "低〜中（AIプロンプトの型化による超効率化）",
-    steps: [
-      "独自のヒアリングシート（強み・市場・計画）への記入依頼",
-      "経営者との壁打ち（60分〜90分）",
-      "ヒアリング内容をAIに入力し、SWOT分析や計画書本文をドラフト",
-      "コンサルタントの知見による精査・修正と提出サポート"
-    ]
-  },
-  {
-    id: 'c3',
-    title: "DX推進・バックオフィスSaaS導入支援",
-    category: "組織改革",
-    icon: <Laptop className="w-8 h-8 text-purple-500" />,
-    description: "単なるツール紹介ではなく、業務フローの棚卸しから最適なSaaSの選定、社内定着（マニュアル化）までをパッケージ化。",
-    target: "アナログ業務が多く、残業過多に悩む企業",
-    price: "プロジェクト型：50万円〜150万円",
-    effort: "高（複数ツールの知見とチェンジマネジメントが必要）",
-    steps: [
-      "現場担当者へのヒアリングによる「現状の業務フロー図（As-Is）」作成",
-      "課題抽出と「理想の業務フロー（To-Be）」の策定・SaaS選定",
-      "テスト導入と現場向け操作マニュアルのAI自動作成",
-      "本稼働サポートと定着化（3ヶ月間の伴走）"
-    ]
-  },
-  {
-    id: 'c4',
-    title: "幹部育成・人事評価制度 構築パッケージ",
-    category: "人事・組織",
-    icon: <Users className="w-8 h-8 text-orange-500" />,
-    description: "企業の「成長痛」を解消するための評価制度作成。AIを用いて業界他社の事例ベンチマークや評価項目のドラフトを行う。",
-    target: "従業員数が20名〜50名の壁に直面している企業",
-    price: "プロジェクト型：100万円〜200万円",
-    effort: "中〜高（経営陣との深い合意形成が必要）",
-    steps: [
-      "経営層へのヒアリングによる「求める人物像」の言語化",
-      "AIによる役職・職種別の「評価項目（ルーブリック）」のドラフト作成",
-      "評価者（幹部）向けフィードバック研修の実施",
-      "評価制度のトライアル運用と制度修正"
-    ]
-  }
-];
-
-const consultingPresets = [
-  "売上1億〜5億のオーナー企業",
-  "売上5億〜30億の中堅企業",
-  "スタートアップ・ベンチャー",
-  "製造業・建設業中心",
-  "IT・サービス業中心",
-  "特定の地域（商圏）密着型"
-];
-
-const consultingPainPoints = [
-  "単発案件（スポット）ばかりで、継続収入（ストック）にならない",
-  "提案や実務がコンサル個人のスキルに依存（属人化）",
-  "新規顧客の獲得コストが高い（紹介頼み）",
-  "クライアントの実行力が弱く、成果・改善が進まない"
-];
-
-
-export default function App() {
-  const [step, setStep] = useState(0); // 0: 入口（モード選択）, 1: ヒアリング, 2: アイデア, 3: 計画
-  const [businessMode, setBusinessMode] = useState(null); // 'tax' or 'consult'
-
-  const [profile, setProfile] = useState({
-    staffCount: '1-5名',
-    clientTypes: [],
-    painPoint: ''
-  });
-  const [selectedIdea, setSelectedIdea] = useState(null);
-  const [newClientType, setNewClientType] = useState("");
-  const [adoptedIdea, setAdoptedIdea] = useState(null);
-
-  // モード選択時の初期化処理
-  const handleSelectMode = (mode) => {
-    setBusinessMode(mode);
-    setProfile({
-      staffCount: '1-5名',
-      clientTypes: [mode === 'tax' ? "法人メイン（売上1億〜5億）" : "売上1億〜5億のオーナー企業"],
-      painPoint: mode === 'tax' ? taxPainPoints[0] : consultingPainPoints[0]
-    });
-    setStep(1);
-  };
-
-  const handleAddClientType = (type) => {
-    if (type.trim() !== "" && !profile.clientTypes.includes(type.trim())) {
-      setProfile({ ...profile, clientTypes: [...profile.clientTypes, type.trim()] });
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    setNewClientType("");
-  };
+    .animate-fade-in { animation: fadeIn 0.25s ease-out both; }
 
-  const handleRemoveClientType = (typeToRemove) => {
-    setProfile({
-      ...profile,
-      clientTypes: profile.clientTypes.filter(type => type !== typeToRemove)
-    });
-  };
-
-  const handleAdoptPlan = () => {
-    setAdoptedIdea(selectedIdea);
-    setSelectedIdea(null);
-    setStep(3);
-  };
-
-  const handleReset = () => {
-    setStep(0);
-    setBusinessMode(null);
-    setSelectedIdea(null);
-    setAdoptedIdea(null);
-  };
-
-  const copyToClipboard = (text, buttonElement) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      const textSpan = buttonElement.querySelector('span') || buttonElement;
-      const originalText = textSpan.innerText;
-      textSpan.innerText = "コピーしました！";
-      setTimeout(() => {
-        textSpan.innerText = originalText;
-      }, 2000);
-    } catch (err) {
-      console.error('Failed to copy', err);
+    /* line-clamp フォールバック（Tailwind CDNでも基本動くが念のため） */
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
-    document.body.removeChild(textArea);
-  };
 
-  const activePresets = businessMode === 'tax' ? taxPresets : consultingPresets;
-  const activePainPoints = businessMode === 'tax' ? taxPainPoints : consultingPainPoints;
-  const activeIdeas = businessMode === 'tax' ? taxValueAddIdeas : consultingValueAddIdeas;
+    body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
 
-  // === Step 0: 入口画面 ===
-  const renderStep0 = () => (
-    <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-extrabold text-gray-900">ようこそ、TaxValue Plannerへ</h2>
-        <p className="text-gray-600 mt-4 max-w-xl mx-auto">
-          ヒアリング内容を元に、次の一手となる付加価値プランをご提案します。<br/>
-          まずは、対象となる**事業形態**を選択してください。
-        </p>
-      </div>
+  <script type="text/babel" data-presets="react">
+    const { useState } = React;
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
-        {/* 税理士向けボタン */}
-        <div 
-          onClick={() => handleSelectMode('tax')}
-          className="bg-white rounded-2xl shadow-md hover:shadow-xl border-2 border-transparent hover:border-indigo-500 p-8 cursor-pointer transition-all transform hover:-translate-y-1 group"
-        >
-          <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-100 transition-colors">
-            <Calculator className="w-8 h-8 text-indigo-600" />
+    /* =========================================================
+       Lucide風 アイコン（インラインSVGで再現・外部依存ゼロ）
+       ========================================================= */
+    const Icon = ({ children, className = "w-5 h-5" }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        {children}
+      </svg>
+    );
+
+    const Briefcase = (p) => (
+      <Icon {...p}>
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+      </Icon>
+    );
+    const TrendingUp = (p) => (
+      <Icon {...p}>
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+        <polyline points="16 7 22 7 22 13"></polyline>
+      </Icon>
+    );
+    const Users = (p) => (
+      <Icon {...p}>
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </Icon>
+    );
+    const Calculator = (p) => (
+      <Icon {...p}>
+        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+        <line x1="8" y1="6" x2="16" y2="6"></line>
+        <line x1="16" y1="14" x2="16" y2="18"></line>
+        <line x1="8" y1="10" x2="8" y2="10.01"></line>
+        <line x1="12" y1="10" x2="12" y2="10.01"></line>
+        <line x1="16" y1="10" x2="16" y2="10.01"></line>
+        <line x1="8" y1="14" x2="8" y2="14.01"></line>
+        <line x1="12" y1="14" x2="12" y2="14.01"></line>
+        <line x1="8" y1="18" x2="8" y2="18.01"></line>
+        <line x1="12" y1="18" x2="12" y2="18.01"></line>
+      </Icon>
+    );
+    const FileText = (p) => (
+      <Icon {...p}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <line x1="10" y1="9" x2="8" y2="9"></line>
+      </Icon>
+    );
+    const ChevronRight = (p) => (
+      <Icon {...p}>
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </Icon>
+    );
+    const CheckCircle = (p) => (
+      <Icon {...p}>
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </Icon>
+    );
+    const Lightbulb = (p) => (
+      <Icon {...p}>
+        <path d="M9 18h6"></path>
+        <path d="M10 22h4"></path>
+        <path d="M12 2a7 7 0 0 0-4 12.7c.7.6 1 1.4 1 2.3v1h6v-1c0-.9.3-1.7 1-2.3A7 7 0 0 0 12 2z"></path>
+      </Icon>
+    );
+    const Settings = (p) => (
+      <Icon {...p}>
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.36.21.63.51.82.86.18.36.27.76.27 1.14H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </Icon>
+    );
+    const BrainCircuit = (p) => (
+      <Icon {...p}>
+        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path>
+        <path d="M9 13a4.5 4.5 0 0 0 3-4"></path>
+        <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"></path>
+        <path d="M3.477 10.896a4 4 0 0 1 .585-.396"></path>
+        <path d="M6 18a4 4 0 0 1-1.967-.516"></path>
+        <path d="M12 13h4"></path>
+        <path d="M12 18h6a2 2 0 0 1 2 2v1"></path>
+        <path d="M12 8h8"></path>
+        <path d="M16 8V5a2 2 0 0 1 2-2"></path>
+        <circle cx="16" cy="13" r=".5"></circle>
+        <circle cx="18" cy="3" r=".5"></circle>
+        <circle cx="20" cy="21" r=".5"></circle>
+        <circle cx="20" cy="8" r=".5"></circle>
+      </Icon>
+    );
+    const PiggyBank = (p) => (
+      <Icon {...p}>
+        <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-7.5-1-10 1-2.5 2-3 6-1 9 .5.7 1 1 1 1H4c0 1 0 2 1 2h2v1l1 1h2v-1l1 .5V21h2v-1.5l1-.5v-2c.5 0 1-.5 1-.5l1.5 1v1l1 1h2v-1c0-1 1-2 1-2 .8-1 1-2 1-3v-2c0-2-2-2-2-2-.8-2-2-3-2-3 0-.5.5-1 .5-1V5z"></path>
+        <path d="M2 9v1c0 1 1 2 2 2"></path>
+        <path d="M16 11h.01"></path>
+      </Icon>
+    );
+    const Building = (p) => (
+      <Icon {...p}>
+        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+        <path d="M9 22v-4h6v4"></path>
+        <path d="M8 6h.01"></path>
+        <path d="M16 6h.01"></path>
+        <path d="M12 6h.01"></path>
+        <path d="M12 10h.01"></path>
+        <path d="M12 14h.01"></path>
+        <path d="M16 10h.01"></path>
+        <path d="M16 14h.01"></path>
+        <path d="M8 10h.01"></path>
+        <path d="M8 14h.01"></path>
+      </Icon>
+    );
+    const X = (p) => (
+      <Icon {...p}>
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </Icon>
+    );
+    const Plus = (p) => (
+      <Icon {...p}>
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </Icon>
+    );
+    const Copy = (p) => (
+      <Icon {...p}>
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </Icon>
+    );
+    const LineChart = (p) => (
+      <Icon {...p}>
+        <path d="M3 3v18h18"></path>
+        <path d="m19 9-5 5-4-4-3 3"></path>
+      </Icon>
+    );
+    const Target = (p) => (
+      <Icon {...p}>
+        <circle cx="12" cy="12" r="10"></circle>
+        <circle cx="12" cy="12" r="6"></circle>
+        <circle cx="12" cy="12" r="2"></circle>
+      </Icon>
+    );
+    const Laptop = (p) => (
+      <Icon {...p}>
+        <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+      </Icon>
+    );
+
+    /* =========================================================
+       税理士・会計事務所向け データ
+       ========================================================= */
+    const taxValueAddIdeas = [
+      {
+        id: 't1',
+        title: "AI活用 経営分析レポート",
+        category: "経営支援",
+        icon: <BrainCircuit className="w-8 h-8 text-blue-500" />,
+        description: "試算表データをAIで分析し、業界平均との比較や将来予測、改善提案を含むレポートを自動生成・提供するサービス。",
+        target: "全顧問先（特に成長意欲のある企業）",
+        price: "月額 +5,000円〜10,000円",
+        effort: "低（AI活用による自動化）",
+        steps: [
+          "既存の試算表フォーマットからデータ抽出",
+          "生成AI（ChatGPT等）へプロンプト入力（収益性、安全性等の分析指示）",
+          "出力結果を専門家がレビュー・加筆修正",
+          "月次訪問・面談時にレポートとして提出"
+        ]
+      },
+      {
+        id: 't2',
+        title: "AI 補助金・助成金 自動診断",
+        category: "資金繰り支援",
+        icon: <PiggyBank className="w-8 h-8 text-green-500" />,
+        description: "顧問先の事業内容や財務状況から、申請可能性の高い補助金を定期的にAI診断して提案するサービス。",
+        target: "設備投資を控えている企業、採用注力企業",
+        price: "月額 +3,000円〜（＋申請成功報酬）",
+        effort: "中（最新情報のキャッチアップが必要）",
+        steps: [
+          "顧問先の基本情報・投資予定をヒアリングシートにまとめる",
+          "AIを用いて最新の補助金情報とマッチング",
+          "申請可能性の高いものをリスト化して提案",
+          "（オプション）申請書ドラフトのAI作成支援"
+        ]
+      },
+      {
+        id: 't3',
+        title: "クラウド・経理BPOパッケージ",
+        category: "業務改善",
+        icon: <Calculator className="w-8 h-8 text-purple-500" />,
+        description: "記帳代行だけでなく、クラウドツール（請求、勤怠、経費精算）の導入から運用までを丸ごと請け負うサービス。",
+        target: "人手不足に悩む中小企業、経理担当者の退職予定企業",
+        price: "月額 +50,000円〜150,000円",
+        effort: "高（初期設定と標準化が必要）",
+        steps: [
+          "現在の経理フローのヒアリングと課題抽出",
+          "クラウド会計・各種SaaSの選定と初期セットアップ",
+          "業務フローの再構築・マニュアル化",
+          "記帳業務のAI-OCR化による内製効率化と運用開始"
+        ]
+      },
+      {
+        id: 't4',
+        title: "スモールM&A / 事業承継アドバイザリー",
+        category: "高度専門支援",
+        icon: <Building className="w-8 h-8 text-orange-500" />,
+        description: "後継者不在の企業に対する事業承継計画の策定や、小規模M&Aのバリュエーション、買い手探し支援。",
+        target: "社長が高齢化している黒字企業",
+        price: "着手金＋成功報酬（取引額の数%）",
+        effort: "高（専門知識とネットワークが必要）",
+        steps: [
+          "決算事前対策でのヒアリング時に承継ニーズを確認",
+          "自社株評価・簡易企業価値評価の実施",
+          "M&Aプラットフォームの活用・買い手候補の選定",
+          "デューデリジェンスサポート・最終契約支援"
+        ]
+      }
+    ];
+
+    const taxPresets = [
+      "法人メイン（売上1億〜5億）",
+      "創業期・スタートアップ中心",
+      "個人事業主・フリーランス中心",
+      "資産家・地主（相続メイン）",
+      "医療法人・クリニック",
+      "飲食・小売・サービス業"
+    ];
+
+    const taxPainPoints = [
+      "単価が上がらない・記帳業務に追われている",
+      "スタッフの採用・定着が難しい（属人化）",
+      "他事務所との差別化ができていない",
+      "顧問先の業績悪化・資金繰り不安"
+    ];
+
+    /* =========================================================
+       経営コンサルタント向け データ
+       ========================================================= */
+    const consultingValueAddIdeas = [
+      {
+        id: 'c1',
+        title: "社外CFO（伴走型 経営会議支援）",
+        category: "継続支援（ストック化）",
+        icon: <LineChart className="w-8 h-8 text-blue-500" />,
+        description: "スポットでの計画策定で終わらせず、月次経営会議にファシリテーターとして入り、予実管理とアクションの実行を担保する。",
+        target: "売上3億〜10億で右腕人材（CFO）が不在の企業",
+        price: "月額 100,000円〜300,000円",
+        effort: "中（フォーマット化で属人化を排除可能）",
+        steps: [
+          "キックオフにて年間目標とKPIの設定",
+          "月次経営会議のフォーマット（アジェンダ）の固定化",
+          "AIを活用した会議議事録・決定事項の即時要約・共有",
+          "次月までのアクションアイテム（宿題）の進捗トラッキング"
+        ]
+      },
+      {
+        id: 'c2',
+        title: "AI活用 高速・事業計画策定支援",
+        category: "資金調達・補助金",
+        icon: <Target className="w-8 h-8 text-red-500" />,
+        description: "経営者の頭の中にある構想をヒアリングし、生成AIを用いて銀行や補助金審査員に刺さる事業計画書を高速でドラフトする。",
+        target: "新規事業立ち上げ、大型設備投資を控える企業",
+        price: "着手金10万円 ＋ 成功報酬10%",
+        effort: "低〜中（AIプロンプトの型化による超効率化）",
+        steps: [
+          "独自のヒアリングシート（強み・市場・計画）への記入依頼",
+          "経営者との壁打ち（60分〜90分）",
+          "ヒアリング内容をAIに入力し、SWOT分析や計画書本文をドラフト",
+          "コンサルタントの知見による精査・修正と提出サポート"
+        ]
+      },
+      {
+        id: 'c3',
+        title: "DX推進・バックオフィスSaaS導入支援",
+        category: "組織改革",
+        icon: <Laptop className="w-8 h-8 text-purple-500" />,
+        description: "単なるツール紹介ではなく、業務フローの棚卸しから最適なSaaSの選定、社内定着（マニュアル化）までをパッケージ化。",
+        target: "アナログ業務が多く、残業過多に悩む企業",
+        price: "プロジェクト型：50万円〜150万円",
+        effort: "高（複数ツールの知見とチェンジマネジメントが必要）",
+        steps: [
+          "現場担当者へのヒアリングによる「現状の業務フロー図（As-Is）」作成",
+          "課題抽出と「理想の業務フロー（To-Be）」の策定・SaaS選定",
+          "テスト導入と現場向け操作マニュアルのAI自動作成",
+          "本稼働サポートと定着化（3ヶ月間の伴走）"
+        ]
+      },
+      {
+        id: 'c4',
+        title: "幹部育成・人事評価制度 構築パッケージ",
+        category: "人事・組織",
+        icon: <Users className="w-8 h-8 text-orange-500" />,
+        description: "企業の「成長痛」を解消するための評価制度作成。AIを用いて業界他社の事例ベンチマークや評価項目のドラフトを行う。",
+        target: "従業員数が20名〜50名の壁に直面している企業",
+        price: "プロジェクト型：100万円〜200万円",
+        effort: "中〜高（経営陣との深い合意形成が必要）",
+        steps: [
+          "経営層へのヒアリングによる「求める人物像」の言語化",
+          "AIによる役職・職種別の「評価項目（ルーブリック）」のドラフト作成",
+          "評価者（幹部）向けフィードバック研修の実施",
+          "評価制度のトライアル運用と制度修正"
+        ]
+      }
+    ];
+
+    const consultingPresets = [
+      "売上1億〜5億のオーナー企業",
+      "売上5億〜30億の中堅企業",
+      "スタートアップ・ベンチャー",
+      "製造業・建設業中心",
+      "IT・サービス業中心",
+      "特定の地域（商圏）密着型"
+    ];
+
+    const consultingPainPoints = [
+      "単発案件（スポット）ばかりで、継続収入（ストック）にならない",
+      "提案や実務がコンサル個人のスキルに依存（属人化）",
+      "新規顧客の獲得コストが高い（紹介頼み）",
+      "クライアントの実行力が弱く、成果・改善が進まない"
+    ];
+
+    /* =========================================================
+       App 本体
+       ========================================================= */
+    function App() {
+      const [step, setStep] = useState(0);
+      const [businessMode, setBusinessMode] = useState(null);
+
+      const [profile, setProfile] = useState({
+        staffCount: '1-5名',
+        clientTypes: [],
+        painPoint: ''
+      });
+      const [selectedIdea, setSelectedIdea] = useState(null);
+      const [newClientType, setNewClientType] = useState("");
+      const [adoptedIdea, setAdoptedIdea] = useState(null);
+
+      const handleSelectMode = (mode) => {
+        setBusinessMode(mode);
+        setProfile({
+          staffCount: '1-5名',
+          clientTypes: [mode === 'tax' ? "法人メイン（売上1億〜5億）" : "売上1億〜5億のオーナー企業"],
+          painPoint: mode === 'tax' ? taxPainPoints[0] : consultingPainPoints[0]
+        });
+        setStep(1);
+      };
+
+      const handleAddClientType = (type) => {
+        if (type.trim() !== "" && !profile.clientTypes.includes(type.trim())) {
+          setProfile({ ...profile, clientTypes: [...profile.clientTypes, type.trim()] });
+        }
+        setNewClientType("");
+      };
+
+      const handleRemoveClientType = (typeToRemove) => {
+        setProfile({
+          ...profile,
+          clientTypes: profile.clientTypes.filter(type => type !== typeToRemove)
+        });
+      };
+
+      const handleAdoptPlan = () => {
+        setAdoptedIdea(selectedIdea);
+        setSelectedIdea(null);
+        setStep(3);
+      };
+
+      const handleReset = () => {
+        setStep(0);
+        setBusinessMode(null);
+        setSelectedIdea(null);
+        setAdoptedIdea(null);
+      };
+
+      const copyToClipboard = (text, buttonElement) => {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          const textSpan = buttonElement.querySelector('span') || buttonElement;
+          const originalText = textSpan.innerText;
+          textSpan.innerText = "コピーしました！";
+          setTimeout(() => {
+            textSpan.innerText = originalText;
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy', err);
+        }
+        document.body.removeChild(textArea);
+      };
+
+      const activePresets = businessMode === 'tax' ? taxPresets : consultingPresets;
+      const activePainPoints = businessMode === 'tax' ? taxPainPoints : consultingPainPoints;
+      const activeIdeas = businessMode === 'tax' ? taxValueAddIdeas : consultingValueAddIdeas;
+
+      // === Step 0: 入口画面 ===
+      const renderStep0 = () => (
+        <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-extrabold text-gray-900">ようこそ、TaxValue Plannerへ</h2>
+            <p className="text-gray-600 mt-4 max-w-xl mx-auto">
+              ヒアリング内容を元に、次の一手となる付加価値プランをご提案します。<br/>
+              まずは、対象となる<span className="font-bold">事業形態</span>を選択してください。
+            </p>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">税理士・会計事務所 向け</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            記帳代行からの脱却、単価アップ、人材不足解消に向けた付加価値サービスの構築を行います。
-          </p>
-          <ul className="text-sm text-gray-500 space-y-1 mt-4">
-            <li>✓ 経営分析レポート自動化</li>
-            <li>✓ 経理BPOパッケージ</li>
-            <li>✓ 補助金・M&A支援 など</li>
-          </ul>
-        </div>
 
-        {/* コンサル向けボタン */}
-        <div 
-          onClick={() => handleSelectMode('consult')}
-          className="bg-white rounded-2xl shadow-md hover:shadow-xl border-2 border-transparent hover:border-emerald-500 p-8 cursor-pointer transition-all transform hover:-translate-y-1 group"
-        >
-          <div className="bg-emerald-50 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:bg-emerald-100 transition-colors">
-            <Briefcase className="w-8 h-8 text-emerald-600" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">経営コンサルタント 向け</h3>
-          <p className="text-gray-600 text-sm mb-4">
-            単発案件から継続契約（ストック）への転換、提案の属人化解消、AIを活用した超効率化を図ります。
-          </p>
-          <ul className="text-sm text-gray-500 space-y-1 mt-4">
-            <li>✓ 社外CFO（伴走型会議）</li>
-            <li>✓ AI高速・事業計画策定</li>
-            <li>✓ DX・SaaS導入支援 など</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-
-  // === Step 1: ヒアリング ===
-  const renderStep1 = () => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-fade-in">
-      <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-        <Users className="w-6 h-6 mr-2 text-indigo-600" />
-        Step 1: 事務所の現状ヒアリング
-      </h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">組織の規模（スタッフ数）</label>
-          <select 
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-            value={profile.staffCount}
-            onChange={(e) => setProfile({...profile, staffCount: e.target.value})}
-          >
-            <option>1-5名（代表＋パート・少数精鋭）</option>
-            <option>6-15名（組織化フェーズ）</option>
-            <option>16名以上（部門化・大規模）</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">主な顧客層（複数選択・自由入力可）</label>
-          
-          <div className="flex flex-wrap gap-2 mb-3">
-            {profile.clientTypes.map((type, index) => (
-              <span key={index} className="inline-flex items-center bg-indigo-100 text-indigo-800 text-sm px-3 py-1 rounded-full">
-                {type}
-                <button onClick={() => handleRemoveClientType(type)} className="ml-1.5 focus:outline-none text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-200 p-0.5 transition-colors">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </span>
-            ))}
-          </div>
-
-          <div className="flex gap-2 mb-3">
-            <input 
-              type="text"
-              className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-              placeholder="新しい顧客層を手入力... (例: 建設業)"
-              value={newClientType}
-              onChange={(e) => setNewClientType(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddClientType(newClientType);
-                }
-              }}
-            />
-            <button 
-              onClick={() => handleAddClientType(newClientType)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg flex items-center text-sm font-medium transition-colors"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl px-4">
+            <div
+              onClick={() => handleSelectMode('tax')}
+              className="bg-white rounded-2xl shadow-md hover:shadow-xl border-2 border-transparent hover:border-indigo-500 p-8 cursor-pointer transition-all transform hover:-translate-y-1 group"
             >
-              <Plus className="w-4 h-4 mr-1" /> 追加
+              <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-100 transition-colors">
+                <Calculator className="w-8 h-8 text-indigo-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">税理士・会計事務所 向け</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                記帳代行からの脱却、単価アップ、人材不足解消に向けた付加価値サービスの構築を行います。
+              </p>
+              <ul className="text-sm text-gray-500 space-y-1 mt-4">
+                <li>✓ 経営分析レポート自動化</li>
+                <li>✓ 経理BPOパッケージ</li>
+                <li>✓ 補助金・M&A支援 など</li>
+              </ul>
+            </div>
+
+            <div
+              onClick={() => handleSelectMode('consult')}
+              className="bg-white rounded-2xl shadow-md hover:shadow-xl border-2 border-transparent hover:border-emerald-500 p-8 cursor-pointer transition-all transform hover:-translate-y-1 group"
+            >
+              <div className="bg-emerald-50 w-16 h-16 rounded-full flex items-center justify-center mb-6 group-hover:bg-emerald-100 transition-colors">
+                <Briefcase className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">経営コンサルタント 向け</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                単発案件から継続契約（ストック）への転換、提案の属人化解消、AIを活用した超効率化を図ります。
+              </p>
+              <ul className="text-sm text-gray-500 space-y-1 mt-4">
+                <li>✓ 社外CFO（伴走型会議）</li>
+                <li>✓ AI高速・事業計画策定</li>
+                <li>✓ DX・SaaS導入支援 など</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+
+      // === Step 1: ヒアリング ===
+      const renderStep1 = () => (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-fade-in">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+            <Users className="w-6 h-6 mr-2 text-indigo-600" />
+            Step 1: 事務所の現状ヒアリング
+          </h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">組織の規模（スタッフ数）</label>
+              <select
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={profile.staffCount}
+                onChange={(e) => setProfile({...profile, staffCount: e.target.value})}
+              >
+                <option>1-5名（代表＋パート・少数精鋭）</option>
+                <option>6-15名（組織化フェーズ）</option>
+                <option>16名以上（部門化・大規模）</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">主な顧客層（複数選択・自由入力可）</label>
+
+              <div className="flex flex-wrap gap-2 mb-3">
+                {profile.clientTypes.map((type, index) => (
+                  <span key={index} className="inline-flex items-center bg-indigo-100 text-indigo-800 text-sm px-3 py-1 rounded-full">
+                    {type}
+                    <button onClick={() => handleRemoveClientType(type)} className="ml-1.5 focus:outline-none text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-200 p-0.5 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                  placeholder="新しい顧客層を手入力... (例: 建設業)"
+                  value={newClientType}
+                  onChange={(e) => setNewClientType(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddClientType(newClientType);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => handleAddClientType(newClientType)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg flex items-center text-sm font-medium transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> 追加
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {activePresets.map((type, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAddClientType(type)}
+                    disabled={profile.clientTypes.includes(type)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      profile.clientTypes.includes(type)
+                      ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                      : 'border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50'
+                    }`}
+                  >
+                    + {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">現在一番の課題</label>
+              <select
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={profile.painPoint}
+                onChange={(e) => setProfile({...profile, painPoint: e.target.value})}
+              >
+                {activePainPoints.map((point, idx) => (
+                  <option key={idx} value={point}>{point}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={() => setStep(2)}
+              className={`mt-6 w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+            >
+              AIに新サービスを提案させる
+              <ChevronRight className="w-5 h-5 ml-2" />
+            </button>
+          </div>
+        </div>
+      );
+
+      // === Step 2: 提案 ===
+      const renderStep2 = () => (
+        <div className="animate-fade-in">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center">
+              <Lightbulb className="w-6 h-6 mr-2 text-yellow-500" />
+              Step 2: 組織に最適な付加価値プラン提案
+            </h2>
+            <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-indigo-600">
+              ← ヒアリングに戻る
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {activePresets.map((type, index) => (
-              <button 
-                key={index}
-                onClick={() => handleAddClientType(type)}
-                disabled={profile.clientTypes.includes(type)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  profile.clientTypes.includes(type) 
-                  ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed' 
-                  : 'border-indigo-200 bg-white text-indigo-600 hover:bg-indigo-50'
-                }`}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {activeIdeas.map((idea) => (
+              <div
+                key={idea.id}
+                onClick={() => setSelectedIdea(idea)}
+                className={`bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md cursor-pointer transition-all ${businessMode === 'tax' ? 'hover:border-indigo-500' : 'hover:border-emerald-500'}`}
               >
-                + {type}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">現在一番の課題</label>
-          <select 
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-            value={profile.painPoint}
-            onChange={(e) => setProfile({...profile, painPoint: e.target.value})}
-          >
-            {activePainPoints.map((point, idx) => (
-              <option key={idx} value={point}>{point}</option>
-            ))}
-          </select>
-        </div>
-        
-        <button 
-          onClick={() => setStep(2)}
-          className={`mt-6 w-full text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-        >
-          AIに新サービスを提案させる
-          <ChevronRight className="w-5 h-5 ml-2" />
-        </button>
-      </div>
-    </div>
-  );
-
-  // === Step 2: 提案 ===
-  const renderStep2 = () => (
-    <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800 flex items-center">
-          <Lightbulb className="w-6 h-6 mr-2 text-yellow-500" />
-          Step 2: 組織に最適な付加価値プラン提案
-        </h2>
-        <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-indigo-600">
-          ← ヒアリングに戻る
-        </button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {activeIdeas.map((idea) => (
-          <div 
-            key={idea.id} 
-            onClick={() => setSelectedIdea(idea)}
-            className={`bg-white p-5 rounded-xl border border-gray-200 hover:shadow-md cursor-pointer transition-all ${businessMode === 'tax' ? 'hover:border-indigo-500' : 'hover:border-emerald-500'}`}
-          >
-            <div className="flex items-start space-x-4">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                {idea.icon}
-              </div>
-              <div>
-                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${businessMode === 'tax' ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50'}`}>
-                  {idea.category}
-                </span>
-                <h3 className="text-lg font-bold text-gray-800 mt-2">{idea.title}</h3>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{idea.description}</p>
-                <div className="mt-3 flex items-center text-sm font-medium text-gray-800">
-                  <span className="text-gray-500 mr-2">想定単価:</span> {idea.price}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // === モーダル詳細 ===
-  const renderIdeaDetail = () => {
-    if (!selectedIdea) return null;
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
-        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-800">{selectedIdea.title} の導入シミュレーション</h3>
-            <button onClick={() => setSelectedIdea(null)} className="text-gray-500 hover:text-gray-800 p-2 text-xl font-bold">&times;</button>
-          </div>
-          <div className="p-6">
-            <div className="flex items-center space-x-4 mb-6">
-              {selectedIdea.icon}
-              <div>
-                <p className="text-gray-600">{selectedIdea.description}</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">ターゲット顧客</p>
-                <p className="font-semibold text-gray-800">{selectedIdea.target}</p>
-              </div>
-              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                <p className="text-sm text-green-600 mb-1">収益インパクト</p>
-                <p className="font-bold text-green-800">{selectedIdea.price}</p>
-              </div>
-            </div>
-
-            <h4 className="font-bold text-gray-800 mb-3 flex items-center">
-              <Settings className="w-5 h-5 mr-2 text-gray-500"/>
-              導入までのアクションステップ
-            </h4>
-            <div className="space-y-3 mb-8">
-              {selectedIdea.steps.map((step, idx) => (
-                <div key={idx} className="flex items-start">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <CheckCircle className={`w-5 h-5 ${businessMode === 'tax' ? 'text-indigo-500' : 'text-emerald-500'}`} />
+                <div className="flex items-start space-x-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    {idea.icon}
                   </div>
-                  <p className="ml-3 text-gray-700">{step}</p>
+                  <div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${businessMode === 'tax' ? 'text-indigo-600 bg-indigo-50' : 'text-emerald-600 bg-emerald-50'}`}>
+                      {idea.category}
+                    </span>
+                    <h3 className="text-lg font-bold text-gray-800 mt-2">{idea.title}</h3>
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{idea.description}</p>
+                    <div className="mt-3 flex items-center text-sm font-medium text-gray-800">
+                      <span className="text-gray-500 mr-2">想定単価:</span> {idea.price}
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className={`p-5 rounded-xl border ${businessMode === 'tax' ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
-              <h4 className={`font-bold mb-2 ${businessMode === 'tax' ? 'text-indigo-900' : 'text-emerald-900'}`}>💡 コンサルタントからの提案メモ</h4>
-              <p className={`text-sm ${businessMode === 'tax' ? 'text-indigo-800' : 'text-emerald-800'}`}>
-                現在のスタッフ数（{profile.staffCount}）や課題（{profile.painPoint}）を考慮すると、まずは上位20%の優良顧客に絞ってこのサービスをテスト提供（パイロット導入）することをおすすめします。提供フローが固まってから全社展開することで、業務過多を防ぎつつ収益の底上げが可能です。
-              </p>
-            </div>
-            
-            <div className="mt-6 flex justify-end space-x-3">
-              <button onClick={() => setSelectedIdea(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">キャンセル</button>
-              <button 
-                onClick={handleAdoptPlan} 
-                className={`px-4 py-2 text-white rounded-lg transition-colors ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-              >
-                プランに採用する
-              </button>
-            </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-    );
-  };
+      );
 
-  // === Step 3: アクション計画 ===
-  const renderStep3 = () => {
-    if (!adoptedIdea) return null;
+      // === モーダル詳細 ===
+      const renderIdeaDetail = () => {
+        if (!selectedIdea) return null;
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-800">{selectedIdea.title} の導入シミュレーション</h3>
+                <button onClick={() => setSelectedIdea(null)} className="text-gray-500 hover:text-gray-800 p-2 text-xl font-bold">&times;</button>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center space-x-4 mb-6">
+                  {selectedIdea.icon}
+                  <div>
+                    <p className="text-gray-600">{selectedIdea.description}</p>
+                  </div>
+                </div>
 
-    const consultantRole = businessMode === 'tax' ? '税理士' : '経営コンサルタント';
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <p className="text-sm text-gray-500 mb-1">ターゲット顧客</p>
+                    <p className="font-semibold text-gray-800">{selectedIdea.target}</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                    <p className="text-sm text-green-600 mb-1">収益インパクト</p>
+                    <p className="font-bold text-green-800">{selectedIdea.price}</p>
+                  </div>
+                </div>
 
-    const promptText = `# 指示
+                <h4 className="font-bold text-gray-800 mb-3 flex items-center">
+                  <Settings className="w-5 h-5 mr-2 text-gray-500"/>
+                  導入までのアクションステップ
+                </h4>
+                <div className="space-y-3 mb-8">
+                  {selectedIdea.steps.map((s, idx) => (
+                    <div key={idx} className="flex items-start">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <CheckCircle className={`w-5 h-5 ${businessMode === 'tax' ? 'text-indigo-500' : 'text-emerald-500'}`} />
+                      </div>
+                      <p className="ml-3 text-gray-700">{s}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className={`p-5 rounded-xl border ${businessMode === 'tax' ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                  <h4 className={`font-bold mb-2 ${businessMode === 'tax' ? 'text-indigo-900' : 'text-emerald-900'}`}>💡 コンサルタントからの提案メモ</h4>
+                  <p className={`text-sm ${businessMode === 'tax' ? 'text-indigo-800' : 'text-emerald-800'}`}>
+                    現在のスタッフ数（{profile.staffCount}）や課題（{profile.painPoint}）を考慮すると、まずは上位20%の優良顧客に絞ってこのサービスをテスト提供（パイロット導入）することをおすすめします。提供フローが固まってから全社展開することで、業務過多を防ぎつつ収益の底上げが可能です。
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-end space-x-3">
+                  <button onClick={() => setSelectedIdea(null)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">キャンセル</button>
+                  <button
+                    onClick={handleAdoptPlan}
+                    className={`px-4 py-2 text-white rounded-lg transition-colors ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                  >
+                    プランに採用する
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      // === Step 3: アクション計画 ===
+      const renderStep3 = () => {
+        if (!adoptedIdea) return null;
+
+        const consultantRole = businessMode === 'tax' ? '税理士' : '経営コンサルタント';
+
+        const promptText = `# 指示
 あなたは優秀な【${consultantRole}】です。
 以下の情報を元に、顧客に提出するための「${adoptedIdea.title}」のアウトプットを作成してください。
 
@@ -542,7 +726,7 @@ ${adoptedIdea.target}
 # 参考情報・データ
 [※ここに${businessMode === 'tax' ? '試算表データ' : 'ヒアリングメモや現状の数値'}を貼り付けてください]`;
 
-    const planText = `【${adoptedIdea.title}】導入アクション計画
+        const planText = `【${adoptedIdea.title}】導入アクション計画
 
 ■ 1. ターゲット顧客の抽出
 現状の主な顧客層（${profile.clientTypes.join('、')}）の中から、以下の条件に合うリストを3〜5社ピックアップ。
@@ -556,176 +740,179 @@ ${adoptedIdea.steps.map((stepDesc, idx) => `手順 ${idx + 1}: ${stepDesc}`).joi
 ${promptText}
 `;
 
-    return (
-      <div className="animate-fade-in bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center">
-            <CheckCircle className="w-6 h-6 mr-2 text-green-500" />
-            Step 3: アクション計画作成・実行準備
-          </h2>
-          <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-800">
-            ← プランを選び直す
-          </button>
-        </div>
-
-        <div className={`mb-6 p-4 rounded-lg border flex items-center space-x-4 ${businessMode === 'tax' ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
-           {adoptedIdea.icon}
-           <div>
-             <h3 className={`font-bold ${businessMode === 'tax' ? 'text-indigo-900' : 'text-emerald-900'}`}>{adoptedIdea.title}</h3>
-             <p className={`text-sm ${businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700'}`}>このサービスを立ち上げるための具体的なロードマップとツールです。</p>
-           </div>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
-              <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">1</span>
-              ターゲット顧客の抽出
-            </h4>
-            <p className="text-sm text-gray-600 mb-2">
-              現状の主な顧客層である「<span className="font-semibold">{profile.clientTypes.join('、')}</span>」の中から、以下の条件に合うリストを3〜5社ピックアップしてください。
-            </p>
-            <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
-              <ul className="list-disc list-inside">
-                <li>{adoptedIdea.target}</li>
-                <li>まずは関係性が良好で、新しい提案を聞いてくれそうな既存の優良顧客（テストマーケティング用）</li>
-              </ul>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
-              <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">2</span>
-              実務フローの設計
-            </h4>
-            <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 space-y-3">
-              {adoptedIdea.steps.map((stepDesc, idx) => (
-                <div key={idx} className="flex items-start">
-                  <span className={`font-bold mr-2 whitespace-nowrap ${businessMode === 'tax' ? 'text-indigo-600' : 'text-emerald-600'}`}>手順 {idx + 1}:</span>
-                  <span>{stepDesc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
-              <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">3</span>
-              実行用プロンプトテンプレート（生成AI用）
-            </h4>
-            <p className="text-sm text-gray-600 mb-2">以下のテキストをコピーして、ChatGPTやClaudeに入力することで即座に実務を開始できます。</p>
-            <div className="bg-gray-800 rounded-lg p-4 relative group">
-               <button 
-                 className="absolute top-2 right-2 text-xs bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center"
-                 onClick={(e) => copyToClipboard(promptText, e.currentTarget)}
-               >
-                 <Copy className="w-3 h-3 mr-1" />
-                 <span>コピー</span>
-               </button>
-               <pre className="text-gray-300 text-xs whitespace-pre-wrap font-mono overflow-x-auto">
-{promptText}
-               </pre>
-            </div>
-          </div>
-        </div>
-        
-        <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-center gap-4">
-          <button 
-            className={`text-white font-bold py-3 px-8 rounded-full shadow-md transition-transform hover:scale-105 flex items-center justify-center ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-            onClick={(e) => copyToClipboard(planText, e.currentTarget)}
-          >
-            <Copy className="w-5 h-5 mr-2" />
-            <span>この計画全体をテキストでコピー</span>
-          </button>
-          <button 
-            className="bg-gray-100 text-gray-400 font-bold py-3 px-8 rounded-full flex items-center justify-center cursor-not-allowed"
-            title="PDF出力機能は現在準備中です"
-          >
-            <FileText className="w-5 h-5 mr-2" />
-            PDF出力 (準備中)
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div 
-            className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={handleReset}
-          >
-            <TrendingUp className={`w-6 h-6 ${businessMode === 'consult' ? 'text-emerald-600' : 'text-indigo-600'}`} />
-            <h1 className={`text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${businessMode === 'consult' ? 'from-emerald-600 to-teal-500' : 'from-indigo-600 to-blue-500'}`}>
-              TaxValue Planner
-            </h1>
-            <span className="ml-2 text-xs text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Prootype</span>
-          </div>
-          
-          {/* Header Status (Only show when step > 0) */}
-          {step > 0 && (
-            <div className="flex items-center space-x-4">
-              <span className={`flex items-center text-sm font-medium px-3 py-1 rounded-full ${businessMode === 'tax' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                {businessMode === 'tax' ? <Calculator className="w-4 h-4 mr-1.5"/> : <Briefcase className="w-4 h-4 mr-1.5"/>}
-                {businessMode === 'tax' ? '税理士モード' : 'コンサルモード'}
-              </span>
-              <button 
-                onClick={handleReset}
-                className="text-xs text-gray-500 hover:text-gray-800 underline"
-              >
-                モード切替
+        return (
+          <div className="animate-fade-in bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                <CheckCircle className="w-6 h-6 mr-2 text-green-500" />
+                Step 3: アクション計画作成・実行準備
+              </h2>
+              <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-800">
+                ← プランを選び直す
               </button>
             </div>
-          )}
+
+            <div className={`mb-6 p-4 rounded-lg border flex items-center space-x-4 ${businessMode === 'tax' ? 'bg-indigo-50 border-indigo-100' : 'bg-emerald-50 border-emerald-100'}`}>
+               {adoptedIdea.icon}
+               <div>
+                 <h3 className={`font-bold ${businessMode === 'tax' ? 'text-indigo-900' : 'text-emerald-900'}`}>{adoptedIdea.title}</h3>
+                 <p className={`text-sm ${businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700'}`}>このサービスを立ち上げるための具体的なロードマップとツールです。</p>
+               </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
+                  <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">1</span>
+                  ターゲット顧客の抽出
+                </h4>
+                <p className="text-sm text-gray-600 mb-2">
+                  現状の主な顧客層である「<span className="font-semibold">{profile.clientTypes.join('、')}</span>」の中から、以下の条件に合うリストを3〜5社ピックアップしてください。
+                </p>
+                <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
+                  <ul className="list-disc list-inside">
+                    <li>{adoptedIdea.target}</li>
+                    <li>まずは関係性が良好で、新しい提案を聞いてくれそうな既存の優良顧客（テストマーケティング用）</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
+                  <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">2</span>
+                  実務フローの設計
+                </h4>
+                <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 space-y-3">
+                  {adoptedIdea.steps.map((stepDesc, idx) => (
+                    <div key={idx} className="flex items-start">
+                      <span className={`font-bold mr-2 whitespace-nowrap ${businessMode === 'tax' ? 'text-indigo-600' : 'text-emerald-600'}`}>手順 {idx + 1}:</span>
+                      <span>{stepDesc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-gray-800 mb-3 border-b pb-2 flex items-center">
+                  <span className="bg-gray-800 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full mr-2">3</span>
+                  実行用プロンプトテンプレート（生成AI用）
+                </h4>
+                <p className="text-sm text-gray-600 mb-2">以下のテキストをコピーして、ChatGPTやClaudeに入力することで即座に実務を開始できます。</p>
+                <div className="bg-gray-800 rounded-lg p-4 relative group">
+                   <button
+                     className="absolute top-2 right-2 text-xs bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center"
+                     onClick={(e) => copyToClipboard(promptText, e.currentTarget)}
+                   >
+                     <Copy className="w-3 h-3 mr-1" />
+                     <span>コピー</span>
+                   </button>
+                   <pre className="text-gray-300 text-xs whitespace-pre-wrap font-mono overflow-x-auto">
+{promptText}
+                   </pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-center gap-4">
+              <button
+                className={`text-white font-bold py-3 px-8 rounded-full shadow-md transition-transform hover:scale-105 flex items-center justify-center ${businessMode === 'tax' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                onClick={(e) => copyToClipboard(planText, e.currentTarget)}
+              >
+                <Copy className="w-5 h-5 mr-2" />
+                <span>この計画全体をテキストでコピー</span>
+              </button>
+              <button
+                className="bg-gray-100 text-gray-400 font-bold py-3 px-8 rounded-full flex items-center justify-center cursor-not-allowed"
+                title="PDF出力機能は現在準備中です"
+              >
+                <FileText className="w-5 h-5 mr-2" />
+                PDF出力 (準備中)
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+          {/* Header */}
+          <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div
+                className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={handleReset}
+              >
+                <TrendingUp className={`w-6 h-6 ${businessMode === 'consult' ? 'text-emerald-600' : 'text-indigo-600'}`} />
+                <h1 className={`text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r ${businessMode === 'consult' ? 'from-emerald-600 to-teal-500' : 'from-indigo-600 to-blue-500'}`}>
+                  TaxValue Planner
+                </h1>
+                <span className="ml-2 text-xs text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">Prototype</span>
+              </div>
+
+              {step > 0 && (
+                <div className="flex items-center space-x-4">
+                  <span className={`flex items-center text-sm font-medium px-3 py-1 rounded-full ${businessMode === 'tax' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                    {businessMode === 'tax' ? <Calculator className="w-4 h-4 mr-1.5"/> : <Briefcase className="w-4 h-4 mr-1.5"/>}
+                    {businessMode === 'tax' ? '税理士モード' : 'コンサルモード'}
+                  </span>
+                  <button
+                    onClick={handleReset}
+                    className="text-xs text-gray-500 hover:text-gray-800 underline"
+                  >
+                    モード切替
+                  </button>
+                </div>
+              )}
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="max-w-6xl mx-auto px-4 py-8">
+            {step === 0 ? (
+              renderStep0()
+            ) : (
+              <>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-extrabold text-gray-900">
+                    {businessMode === 'tax' ? '付加価値サービス' : 'コンサルティングメニュー'} 構築シミュレーター
+                  </h2>
+                  <p className="text-gray-600 mt-2">ヒアリング内容を元に、次の一手となる打ち手をご提案します。</p>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-8">
+                  <div className="w-full md:w-1/3 space-y-4">
+                    <div className={`p-4 rounded-lg border-2 transition-all ${step === 1 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : 'border-transparent bg-white shadow-sm'}`}>
+                      <h3 className={`font-bold ${step === 1 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>1. 現状ヒアリング</h3>
+                      <p className="text-xs mt-1 text-gray-500">課題とリソースを入力</p>
+                    </div>
+                    <div className={`p-4 rounded-lg border-2 transition-all ${step === 2 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : 'border-transparent bg-white shadow-sm'}`}>
+                      <h3 className={`font-bold ${step === 2 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>2. アイデア選定</h3>
+                      <p className="text-xs mt-1 text-gray-500">AIが最適なプランを提示</p>
+                    </div>
+                    <div className={`p-4 rounded-lg border-2 transition-all ${step === 3 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : step > 3 ? 'border-transparent bg-white shadow-sm' : 'opacity-50 bg-white shadow-sm'}`}>
+                      <h3 className={`font-bold ${step === 3 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>3. アクション計画作成</h3>
+                      <p className="text-xs mt-1 text-gray-500">導入までのロードマップ策定</p>
+                    </div>
+                  </div>
+
+                  <div className="w-full md:w-2/3">
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {step === 3 && renderStep3()}
+                  </div>
+                </div>
+              </>
+            )}
+          </main>
+
+          {renderIdeaDetail()}
         </div>
-      </header>
+      );
+    }
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        
-        {step === 0 ? (
-          renderStep0()
-        ) : (
-          <>
-            <div className="mb-8">
-              <h2 className="text-2xl font-extrabold text-gray-900">
-                {businessMode === 'tax' ? '付加価値サービス' : 'コンサルティングメニュー'} 構築シミュレーター
-              </h2>
-              <p className="text-gray-600 mt-2">ヒアリング内容を元に、次の一手となる打ち手をご提案します。</p>
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Left / Top - Step Flow */}
-              <div className="w-full md:w-1/3 space-y-4">
-                <div className={`p-4 rounded-lg border-2 transition-all ${step === 1 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : 'border-transparent bg-white shadow-sm'}`}>
-                  <h3 className={`font-bold ${step === 1 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>1. 現状ヒアリング</h3>
-                  <p className="text-xs mt-1 text-gray-500">課題とリソースを入力</p>
-                </div>
-                <div className={`p-4 rounded-lg border-2 transition-all ${step === 2 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : 'border-transparent bg-white shadow-sm'}`}>
-                  <h3 className={`font-bold ${step === 2 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>2. アイデア選定</h3>
-                  <p className="text-xs mt-1 text-gray-500">AIが最適なプランを提示</p>
-                </div>
-                <div className={`p-4 rounded-lg border-2 transition-all ${step === 3 ? (businessMode === 'tax' ? 'border-indigo-500 bg-indigo-50' : 'border-emerald-500 bg-emerald-50') : step > 3 ? 'border-transparent bg-white shadow-sm' : 'opacity-50 bg-white shadow-sm'}`}>
-                  <h3 className={`font-bold ${step === 3 ? (businessMode === 'tax' ? 'text-indigo-700' : 'text-emerald-700') : 'text-gray-600'}`}>3. アクション計画作成</h3>
-                  <p className="text-xs mt-1 text-gray-500">導入までのロードマップ策定</p>
-                </div>
-              </div>
-
-              {/* Right / Bottom - Content */}
-              <div className="w-full md:w-2/3">
-                {step === 1 && renderStep1()}
-                {step === 2 && renderStep2()}
-                {step === 3 && renderStep3()}
-              </div>
-            </div>
-          </>
-        )}
-      </main>
-      
-      {renderIdeaDetail()}
-    </div>
-  );
-}
+    /* マウント */
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
